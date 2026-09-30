@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+@custom-variant hero-lg (@media (min-width: 1100px));
+@custom-variant nav-lg (@media (min-width: 1240px));
+
+@theme {
+  --color-ink: #0b1f3a;
+  --color-ink-2: #12294b;
+  --color-ink-3: #071529;
+  --color-ink-hover: #1b355e;
+  --color-paper: #f2f6fa;
+  --color-teal: #37d3c1;
+  --color-teal-2: #6fe3d5;
+  --color-teal-tint: #dff5f2;
+  --color-blue: #1a5fb4;
+  --color-blue-tint: #dce7f5;
+  --color-coral: #ff8a66;
+  --color-coral-2: #ffa88c;
+  --color-line: #d8e1eb;
+  --color-line-2: #d2dce7;
+  --color-muted: #4a5868;
+  --color-body: #243244;
+  --color-subtle: #66758a;
+  --color-on-dark: #c2cddb;
+  --color-on-dark-2: #b2bfd0;
+  --color-on-dark-3: #8c9bb0;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-marquee: marquee 40s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-paper text-ink font-sans;
+  }
+  ::selection {
+    background: var(--color-teal);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@utility container-x {
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4vw, 48px);
+}
+
+@utility section-y {
+  padding-block: clamp(72px, 10vw, 140px);
+}
+
+@utility grid-bg {
+  background-image:
+    linear-gradient(rgba(242, 246, 250, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242, 246, 250, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+@utility h-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+@utility h-section {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-size: clamp(36px, 4.6vw, 64px);
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
