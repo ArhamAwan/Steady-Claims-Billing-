@@ -306,3 +306,20 @@ export const homeStats: Stat[] = [
   { values: [98], suffix: "%", title: "Acceptance", text: "98% claims acceptance rate." },
   { values: [100], suffix: "%", title: "Follow-up", text: "100% claims follow-up for the fastest receivables." },
 ];
+
+/* ---------------- Home: client testimonials (provided by Steady Claims Billing) ---------------- */
+
+export const testimonials: { name: string; role: string; quote: string }[] = [
+  { name: "Dr. Michael Reynolds", role: "Family Medicine Physician", quote: "Steady Claims Billing has made a noticeable difference in how we handle our billing. Their team is responsive, keeps us updated, and follows up on outstanding claims instead of letting them sit." },
+  { name: "Sarah Mitchell", role: "Practice Administrator", quote: "We were spending far too much time dealing with insurance companies and unpaid claims. Since working with Steady Claims Billing, the process has become much more organized and our staff can focus more on the practice." },
+  { name: "Dr. James Carter", role: "Internal Medicine Physician", quote: "Communication has been one of the biggest positives for us. Whenever something needs our attention, their team lets us know instead of leaving us guessing about the status of a claim." },
+  { name: "Amanda Williams", role: "Clinic Manager", quote: "We needed help getting our aging accounts under control, and Steady Claims Billing gave us a much clearer process for handling outstanding claims and follow-ups. They’ve been easy to work with from the start." },
+  { name: "Dr. Robert Anderson", role: "Primary Care Physician", quote: "Our previous billing process was difficult to keep track of, especially with denied claims. Steady Claims Billing brought more structure to the workflow and has been consistent with follow-ups." },
+  { name: "Jennifer Thompson", role: "Practice Manager", quote: "The team is professional and very easy to communicate with. We appreciate having someone actively monitoring claims and letting us know when documentation or additional information is needed." },
+  { name: "Dr. Daniel Brooks", role: "Family Medicine Physician", quote: "Outsourcing our billing has taken a lot of pressure off our office staff. Steady Claims Billing handles the day-to-day follow-up while keeping us informed about anything that requires our attention." },
+  { name: "Lisa Morgan", role: "Healthcare Practice Administrator", quote: "We’ve had a positive experience with Steady Claims Billing. They are organized, responsive, and actually take the time to explain what is happening with our claims rather than just sending us numbers." },
+  { name: "Dr. Christopher Bennett", role: "Internal Medicine Physician", quote: "Denials were becoming a recurring headache for our practice. Having a team consistently review and follow up on them has made the billing process much easier for our staff to manage." },
+  { name: "Rachel Davis", role: "Medical Office Manager", quote: "Steady Claims Billing has been reliable and professional throughout our experience. The biggest difference for us has been having better visibility into pending claims and knowing that outstanding accounts are being followed up on." },
+  { name: "Dr. Matthew Wilson", role: "Family Practice Physician", quote: "We’ve been very happy with the support from Steady Claims Billing. They’re quick to respond when we have questions and have made the billing side of the practice feel much less overwhelming." },
+  { name: "Kevin Parker", role: "Practice Administrator", quote: "Professional, responsive, and easy to work with. They’ve brought much more organization to our billing and follow-up process." },
+];

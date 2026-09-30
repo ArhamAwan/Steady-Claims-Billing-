@@ -8,6 +8,7 @@ import { Process } from "@/components/home/Process";
 import { WhyUs } from "@/components/home/WhyUs";
 import { SpecialtiesBand } from "@/components/home/SpecialtiesBand";
 import { SelfCheck } from "@/components/home/SelfCheck";
+import { Testimonials } from "@/components/home/Testimonials";
 import { FinalCta } from "@/components/home/FinalCta";
 
 export default function HomePage() {
@@ -23,6 +24,7 @@ export default function HomePage() {
       <WhyUs />
       <SpecialtiesBand />
       <SelfCheck />
+      <Testimonials />
       <FinalCta />
     </>
   );

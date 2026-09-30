@@ -36,6 +36,12 @@
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
   }
+  --animate-reviews: marquee 70s linear infinite;
+  --animate-reviews-rev: marquee-rev 80s linear infinite;
+  @keyframes marquee-rev {
+    from { transform: translateX(-50%); }
+    to { transform: translateX(0); }
+  }
 }
 
 @layer base {
@@ -107,7 +113,9 @@ html.lenis body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
+  .animate-marquee,
+  .animate-reviews,
+  .animate-reviews-rev {
     animation: none;
   }
 }
