@@ -1,5 +1,6 @@
 import { Hero } from "@/components/home/Hero";
 import { Ticker } from "@/components/home/Ticker";
+import { StatsBar } from "@/components/home/StatsBar";
 import { Problem } from "@/components/home/Problem";
 import { ServicesGrid } from "@/components/home/ServicesGrid";
 import { RevenueCycle } from "@/components/home/RevenueCycle";
@@ -13,6 +14,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <StatsBar />
       <Ticker />
       <Problem />
       <ServicesGrid />

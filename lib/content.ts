@@ -286,3 +286,23 @@ export const billingChallenges = [
 ];
 
 export const contactMethods = ["Phone", "Email", "Either"];
+
+/* ---------------- Home: key numbers (supplied by Steady Claims Billing) ---------------- */
+
+export type Stat = {
+  /** Numbers to count up to; two values render as a range (e.g. 2.5–5). */
+  values: number[];
+  /** Decimal places per value (defaults to 0). */
+  decimals?: number[];
+  prefix?: string;
+  suffix: string;
+  title: string;
+  text: string;
+};
+
+export const homeStats: Stat[] = [
+  { values: [2.5, 5], decimals: [1, 0], suffix: "%", title: "Pricing · as low as", text: "Pay as low as 2.50% to 5.00% of the collected amount." },
+  { values: [24], suffix: "hrs", title: "Submission speed", text: "All claims submitted within 24 hours." },
+  { values: [98], suffix: "%", title: "Acceptance", text: "98% claims acceptance rate." },
+  { values: [100], suffix: "%", title: "Follow-up", text: "100% claims follow-up for the fastest receivables." },
+];
