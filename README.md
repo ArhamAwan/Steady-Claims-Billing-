@@ -67,6 +67,17 @@ The form asks visitors not to submit protected health information, so keep patie
 
 ## Deploying
 
+**Hostinger (Node.js web app):**
+- Framework: Next.js
+- Node: 20 or 22
+- Build command: `npm run build`
+- Start command: `npm start`
+- Output directory: `.next`
+
+The production build uses webpack (`next build --webpack`). Turbopack's build workers crash in Hostinger's build environment; `npm run dev` still uses Turbopack locally.
+
+**Anywhere else:**
+
 The site works on Vercel with zero config: import the repo and deploy. Every page is statically generated. Any Node host that can run `next start` also works.
 
 Before launch, check that `site.url` in `lib/site.ts` is set to the live domain. It feeds the sitemap, robots.txt, and metadata.
