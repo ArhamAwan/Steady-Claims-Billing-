@@ -63,7 +63,7 @@ function validate(type: string, value: string, required?: boolean): string {
 function InputField({
   label, id, type = "text", placeholder, autoComplete, value, onChange, required,
 }: {
-  label: string; id: string; type?: string; placeholder?: string;
+  label: React.ReactNode; id: string; type?: string; placeholder?: string;
   autoComplete?: string; value: string; onChange: (v: string) => void; required?: boolean;
 }) {
   const [touched, setTouched] = useState(false);
@@ -257,7 +257,7 @@ export function MetaStepForm({ formRef }: { formRef?: React.RefObject<HTMLDivEle
             <InputField id="specialty" label="Specialty" value={specialty} onChange={setSpecialty} placeholder="e.g. Internal Medicine" />
             <InputField id="providers" label="# of providers" type="number" value={providers} onChange={setProviders} placeholder="1" autoComplete="off" />
           </div>
-          <InputField id="website" label="Practice website" type="url" value={website} onChange={setWebsite} placeholder="https://" />
+          <InputField id="website" label={<>Practice website <span className="font-normal text-subtle">(optional)</span></>} type="url" value={website} onChange={setWebsite} placeholder="https://" />
           <InputField id="location" label="Practice location" value={location} onChange={setLocation} placeholder="City, State" />
         </div>
       ),
