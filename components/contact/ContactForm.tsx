@@ -7,6 +7,7 @@ import { site } from "@/lib/site";
 import { EASE } from "../motion/Reveal";
 import { Icon } from "../ui/Icon";
 import { useLenis } from "../providers/SmoothScroll";
+import { trackPixel } from "../analytics/MetaPixel";
 
 type Mode = "quick" | "full";
 
@@ -129,6 +130,8 @@ export function ContactForm() {
 
     setStatus("idle");
     setSent(true);
+    // Meta Pixel conversion (form type only — no personal details are sent).
+    trackPixel("Lead", { content_name: mode === "quick" ? "Quick question" : "Billing consultation" });
     // Bring the confirmation into view, since the card gets much shorter.
     requestAnimationFrame(() => {
       const el = cardRef.current;
