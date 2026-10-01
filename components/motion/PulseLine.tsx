@@ -1,15 +1,17 @@
 "use client";
 
 import {
+  animate,
   motion,
   useMotionTemplate,
+  useMotionValue,
   useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
   useVelocity,
 } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * The brand heartbeat line, driven by scroll:
@@ -20,9 +22,12 @@ import { useRef } from "react";
 export function PulseLine({
   d = "M0 60 H260 L285 60 L300 22 L322 84 L340 40 L352 60 H620 L640 60 L652 36 L668 74 L680 60 H1440",
   className = "",
+  drawOnLoad = false,
 }: {
   d?: string;
   className?: string;
+  /** Draw the line in on page load (used in the hero) instead of waiting for scroll. */
+  drawOnLoad?: boolean;
   /** Kept for compatibility with earlier usage; the line is now scroll-driven. */
   delay?: number;
 }) {
@@ -32,12 +37,24 @@ export function PulseLine({
 
   // Draw from 0 → 100% while the line travels from the bottom of the screen to just past the middle.
   const drawRaw = useTransform(scrollYProgress, [0.02, 0.55], [0, 1], { clamp: true });
-  const draw = useSpring(drawRaw, { stiffness: 90, damping: 24, mass: 0.4 });
+  const drawScroll = useSpring(drawRaw, { stiffness: 90, damping: 24, mass: 0.4 });
+  // Hero variant: draw once on load and stay fully drawn.
+  const drawLoad = useMotionValue(0);
+  useEffect(() => {
+    if (!drawOnLoad) return;
+    const c = animate(drawLoad, 1, { duration: 2.2, delay: 0.9, ease: [0.65, 0, 0.35, 1] });
+    return () => c.stop();
+  }, [drawOnLoad, drawLoad]);
+  const draw = drawOnLoad ? drawLoad : drawScroll;
 
   // A short bright segment that rides along the line with the scroll.
   const pulseRaw = useTransform(scrollYProgress, [0.05, 0.95], [-0.12, 1]);
   const pulse = useSpring(pulseRaw, { stiffness: 120, damping: 26, mass: 0.4 });
-  const pulseOpacity = useTransform(scrollYProgress, [0.05, 0.15, 0.85, 0.95], [0, 1, 1, 0]);
+  const pulseOpacity = useTransform(
+    scrollYProgress,
+    drawOnLoad ? [0, 0.85, 0.95] : [0.05, 0.15, 0.85, 0.95],
+    drawOnLoad ? [1, 1, 0] : [0, 1, 1, 0]
+  );
 
   // Faster scrolling = taller heartbeat.
   const velocity = useVelocity(scrollY);

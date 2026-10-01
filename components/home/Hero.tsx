@@ -146,7 +146,7 @@ export function Hero() {
           </motion.div>
         </div>
       </div>
-      <PulseLine delay={0.9} />
+      <PulseLine drawOnLoad />
     </section>
   );
 }
