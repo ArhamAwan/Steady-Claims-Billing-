@@ -90,6 +90,7 @@ export function ContactForm() {
   const lenis = useLenis();
   const [mode, setMode] = useState<Mode>("full");
   const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [services, setServices] = useState<string[]>([]);
   const [method, setMethod] = useState<string | null>(null);
   const [challenge, setChallenge] = useState<string | null>(null);
@@ -98,16 +99,35 @@ export function ContactForm() {
   const toggleMulti = (v: string) => setServices((s) => (s.includes(v) ? s.filter((x) => x !== v) : [...s, v]));
   const single = (cur: string | null, set: (v: string | null) => void) => (v: string) => set(cur === v ? null : v);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (status === "sending") return;
     const data = {
       formType: mode,
       ...Object.fromEntries(new FormData(e.currentTarget).entries()),
       services,
       ...(mode === "full" ? { billingMethod: method, mainChallenge: challenge, preferredContact: contact } : {}),
+      page: window.location.href,
     };
-    // TODO: send `data` to the form backend (API route, email service, or CRM) once it's chosen.
-    void data;
+
+    setStatus("sending");
+    try {
+      if (!site.formEndpoint) throw new Error("Form endpoint is not configured");
+      // text/plain keeps this a "simple" request, so the browser skips the CORS preflight Apps Script can't answer.
+      const res = await fetch(site.formEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(data),
+      });
+      const out = (await res.json().catch(() => null)) as { ok?: boolean } | null;
+      if (!res.ok || !out?.ok) throw new Error("Submission was not accepted");
+    } catch (err) {
+      console.error(err);
+      setStatus("error");
+      return;
+    }
+
+    setStatus("idle");
     setSent(true);
     // Bring the confirmation into view, since the card gets much shorter.
     requestAnimationFrame(() => {
@@ -158,7 +178,13 @@ export function ContactForm() {
             </p>
             <button
               type="button"
-              onClick={() => setSent(false)}
+              onClick={() => {
+                setSent(false);
+                setServices([]);
+                setMethod(null);
+                setChallenge(null);
+                setContact(null);
+              }}
               className="inline-flex min-h-[52px] items-center rounded-full bg-ink px-6 text-[15px] font-semibold text-paper transition-colors hover:bg-ink-hover"
             >
               Send another request
@@ -174,6 +200,12 @@ export function ContactForm() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
+            {/* Honeypot: hidden from people, often filled in by spam bots. */}
+            <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+              <label htmlFor="company">Company</label>
+              <input id="company" name="company" type="text" tabIndex={-1} autoComplete="off" />
+            </div>
+
             <div role="tablist" aria-label="Form type" className="flex gap-1.5 rounded-full bg-paper p-1.5">
               {(
                 [
@@ -294,18 +326,49 @@ export function ContactForm() {
                     className="w-full resize-y rounded-[14px] border-[1.5px] border-line-2 bg-white px-4 py-3.5 text-base leading-normal text-ink outline-none transition-[border-color,box-shadow] duration-300 placeholder:text-[#9AA7B8] focus:border-ink focus:shadow-[0_0_0_4px_rgba(55,211,193,.45)]"
                   />
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-5 border-t border-line pt-6">
-                  <p className="max-w-[460px] text-[13px] leading-normal text-subtle">
-                    Submitting this form does not establish a contractual client relationship. Please do not include
-                    patient-specific protected health information.
-                  </p>
-                  <button
-                    type="submit"
-                    className="group inline-flex min-h-[58px] items-center justify-center gap-2.5 rounded-full bg-teal px-[30px] py-2.5 text-center text-base font-semibold leading-tight text-ink transition-[background-color,transform] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2"
-                  >
-                    {isQuick ? "Request a Consultation" : "Request My Billing Consultation"}
-                    <Icon name="arrow" size={18} className="shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
-                  </button>
+                <div className="flex flex-col gap-4 border-t border-line pt-6">
+                  <AnimatePresence initial={false}>
+                    {status === "error" && (
+                      <motion.p
+                        role="alert"
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.3, ease: EASE }}
+                        className="rounded-[14px] border border-coral/40 bg-coral/10 px-4 py-3 text-[14.5px] leading-normal text-ink"
+                      >
+                        Sorry, your request didn&apos;t go through. Please try again, or call us at{" "}
+                        <a href={site.phoneHref} className="font-semibold underline">
+                          {site.phone}
+                        </a>
+                        .
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                  <div className="flex flex-wrap items-center justify-between gap-5">
+                    <p className="max-w-[460px] text-[13px] leading-normal text-subtle">
+                      Submitting this form does not establish a contractual client relationship. Please do not include
+                      patient-specific protected health information.
+                    </p>
+                    <button
+                      type="submit"
+                      disabled={status === "sending"}
+                      aria-busy={status === "sending"}
+                      className="group inline-flex min-h-[58px] items-center justify-center gap-2.5 rounded-full bg-teal px-[30px] py-2.5 text-center text-base font-semibold leading-tight text-ink transition-[background-color,transform,opacity] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2 disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0"
+                    >
+                      {status === "sending" ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/30 border-t-ink" aria-hidden="true" />
+                          Sending…
+                        </>
+                      ) : (
+                        <>
+                          {isQuick ? "Request a Consultation" : "Request My Billing Consultation"}
+                          <Icon name="arrow" size={18} className="shrink-0 transition-transform duration-300 group-hover:translate-x-1" />
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </LayoutGroup>

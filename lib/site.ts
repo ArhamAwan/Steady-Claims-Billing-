@@ -11,6 +11,13 @@ export const site = {
     zip: "77493",
     country: "United States",
   },
+  /**
+   * Google Apps Script web app that saves form submissions to the Google Sheet
+   * (see google-apps-script/Code.gs). Paste the deployment's /exec URL here.
+   */
+  formEndpoint:
+    process.env.NEXT_PUBLIC_FORM_ENDPOINT ||
+    "https://script.google.com/macros/s/AKfycbzlpILXWWGT-y7NfkA1knrE5uNV5BlQfCwWGGrQFThuBv6vSECIljyBSfDS9-iXskbM/exec",
   tagline: "Medical billing and revenue cycle support for healthcare providers.",
   disclaimer:
     "Information provided on this website is for general informational purposes and does not constitute legal, medical, coding, reimbursement, or compliance advice. Insurance coverage and reimbursement decisions are determined by applicable payers and their policies.",
