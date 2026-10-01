@@ -7,6 +7,8 @@ import { AnimatedHeading } from "../motion/AnimatedHeading";
 import { PulseLine } from "../motion/PulseLine";
 import { EASE } from "../motion/Reveal";
 import { ButtonLink } from "../ui/Button";
+import { Icon } from "../ui/Icon";
+import { heroPoints } from "@/lib/content";
 import { ClaimsBoard } from "./ClaimsBoard";
 import { Doctor3D } from "./Doctor3D";
 
@@ -47,16 +49,30 @@ export function Hero() {
             ]}
           />
 
-          <motion.p
-            className="max-w-[580px] text-[clamp(17px,1.5vw,20px)] leading-relaxed text-on-dark hero-lg:text-[clamp(16px,min(1.4vw,2.5vh),19px)]"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: EASE, delay: 0.7 }}
+          <motion.ul
+            aria-label="Why practices choose Steady Claims Billing"
+            className="grid max-w-[620px] grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2"
+            initial="hidden"
+            animate="show"
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.7 } } }}
           >
-            Steady Claims Billing helps healthcare providers manage the billing process from claim submission through
-            payment follow-up — billing, revenue cycle management, insurance verification, denial management, AR
-            follow-up, payment posting, coding support, and credentialing assistance.
-          </motion.p>
+            {heroPoints.map((p) => (
+              <motion.li
+                key={p.key}
+                className="flex items-start gap-3 text-[clamp(15.5px,1.3vw,17px)] leading-snug text-on-dark hero-lg:text-[clamp(15px,min(1.25vw,2.3vh),17px)]"
+                variants={{ hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } } }}
+              >
+                <span className="mt-[1px] flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal/15 text-teal">
+                  <Icon name="check" size={14} strokeWidth={2.6} />
+                </span>
+                <span>
+                  {p.before}
+                  <strong className="whitespace-nowrap font-semibold text-teal">{p.highlight}</strong>
+                  {p.after}
+                </span>
+              </motion.li>
+            ))}
+          </motion.ul>
 
           <motion.div
             className="flex flex-wrap gap-3.5"
