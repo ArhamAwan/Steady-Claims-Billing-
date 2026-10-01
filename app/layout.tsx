@@ -28,6 +28,11 @@ export const metadata: Metadata = {
     siteName: site.name,
     locale: "en_US",
   },
+  verification: {
+    other: {
+      "facebook-domain-verification": "96hry4knrpd54u3o3o8o7qauka6n9r",
+    },
+  },
 };
 
 export const viewport: Viewport = {
