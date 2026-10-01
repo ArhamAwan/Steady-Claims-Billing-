@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { ConditionalShell } from "@/components/layout/ConditionalShell";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { site } from "@/lib/site";
@@ -68,9 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <SmoothScroll>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
+          <ConditionalShell>{children}</ConditionalShell>
         </SmoothScroll>
         <MetaPixel />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
