@@ -139,7 +139,7 @@ const slide = {
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -48 : 48 }),
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 // ── Main component ────────────────────────────────────────────────────────────
 
@@ -155,12 +155,7 @@ export function MetaStepForm({ formRef }: { formRef?: React.RefObject<HTMLDivEle
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Step 2
-  const [practiceName, setPracticeName] = useState("");
   const [specialty, setSpecialty] = useState("");
-  const [providers, setProviders] = useState("");
-  const [website, setWebsite] = useState("");
-  const [location, setLocation] = useState("");
 
   // Step 3
   const [billingMethod, setBillingMethod] = useState<string | null>(null);
@@ -186,7 +181,25 @@ export function MetaStepForm({ formRef }: { formRef?: React.RefObject<HTMLDivEle
     formRef?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  function submitPartial() {
+    if (!site.formEndpoint || !email || !firstName) return;
+    const data = {
+      formType: "meta-lead",
+      isPartial: true,
+      firstName, lastName, email, phone, specialty,
+      billingMethod, mainChallenge: challenge, services,
+      claimVolume, ehr, preferredContact: contactMethod, message,
+      page: typeof window !== "undefined" ? window.location.href : "",
+    };
+    fetch(site.formEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(data),
+    }).catch(() => {});
+  }
+
   function go(next: number) {
+    if (next > step) submitPartial();
     setDir(next > step ? 1 : -1);
     setStep(next);
     setTimeout(scrollCenter, 80);
@@ -197,8 +210,8 @@ export function MetaStepForm({ formRef }: { formRef?: React.RefObject<HTMLDivEle
 
     const data = {
       formType: "meta-lead",
-      firstName, lastName, email, phone,
-      practiceName, specialty, providers, website, location,
+      isPartial: false,
+      firstName, lastName, email, phone, specialty,
       billingMethod,
       mainChallenge: challenge,
       services,
@@ -242,23 +255,10 @@ export function MetaStepForm({ formRef }: { formRef?: React.RefObject<HTMLDivEle
             <InputField id="lastName" label="Last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
           </div>
           <InputField id="email" label="Work email" type="email" required value={email} onChange={setEmail} autoComplete="email" placeholder="you@practice.com" />
-          <InputField id="phone" label="Phone number" type="tel" value={phone} onChange={setPhone} autoComplete="tel" placeholder="+1 (702) 000-0000" />
-        </div>
-      ),
-    },
-    {
-      heading: "Tell us about your practice.",
-      sub: "Helps us focus your audit on the right areas.",
-      canContinue: practiceName.trim() !== "",
-      content: (
-        <div className="flex flex-col gap-4">
-          <InputField id="practiceName" label="Practice name" required value={practiceName} onChange={setPracticeName} />
           <div className="grid grid-cols-2 gap-3">
-            <InputField id="specialty" label="Specialty" value={specialty} onChange={setSpecialty} placeholder="e.g. Internal Medicine" />
-            <InputField id="providers" label="# of providers" type="number" value={providers} onChange={setProviders} placeholder="1" autoComplete="off" />
+            <InputField id="phone" label="Phone number" type="tel" value={phone} onChange={setPhone} autoComplete="tel" placeholder="+1 (702) 000-0000" />
+            <InputField id="specialty" label="Specialty" value={specialty} onChange={setSpecialty} placeholder="e.g. Ob/Gyn" />
           </div>
-          <InputField id="website" label={<>Practice website <span className="font-normal text-subtle">(optional)</span></>} type="url" value={website} onChange={setWebsite} placeholder="https://" />
-          <InputField id="location" label="Practice location" value={location} onChange={setLocation} placeholder="City, State" />
         </div>
       ),
     },
