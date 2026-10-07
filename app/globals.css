@@ -119,3 +119,38 @@ html.lenis body {
     animation: none;
   }
 }
+
+/* Revenue calculator sliders (/revenue-calculator) */
+.calc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  margin: 6px 0;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-teal) 0 var(--p), #dce4ed var(--p) 100%);
+  cursor: pointer;
+  outline: none;
+}
+.calc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 1.5px var(--color-ink), 0 6px 14px -4px rgba(11, 31, 58, 0.5);
+  transition: transform 0.15s;
+}
+.calc-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
+.calc-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 1.5px var(--color-ink);
+}
+.calc-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1.5px var(--color-ink), 0 0 0 7px rgba(55, 211, 193, 0.5);
+}

@@ -11,6 +11,9 @@
  *   3. Deploy → New deployment → Web app. Execute as: Me. Who has access: Anyone.
  *   4. Copy the Web app URL (ends in /exec) into the website (lib/site.ts → formEndpoint).
  *
+ * Columns are only ever added at the end of a tab, so existing rows stay lined up.
+ * After adding columns, run `setup` once more to write the new headings.
+ *
  * After changing this code later: Deploy → Manage deployments → edit (pencil) → Version: New version → Deploy.
  * That keeps the same /exec URL, so the website does not need to change.
  */
@@ -62,6 +65,14 @@ const TABS = {
       ['Services Interested In', 'services', 260],
       ['Additional Information', 'message', 360],
       ['Page', 'page', 200],
+      // Added for the /revenue-calculator lander (blank for the contact page).
+      ['Source', 'source', 180],
+      ['Calc: Monthly Collections', 'calcCollections', 150],
+      ['Calc: Claims / Month', 'calcClaims', 120],
+      ['Calc: Denial Rate', 'calcDenialRate', 110],
+      ['Calc: Current Billing Cost', 'calcBillingCost', 150],
+      ['Calc: Est. Yearly Upside', 'calcEstimate', 230],
+      ['Calc: Our Fee', 'calcFee', 200],
     ],
   },
 };

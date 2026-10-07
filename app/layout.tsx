@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -68,9 +69,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <SmoothScroll>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
+          <SiteChrome header={<Header />} footer={<Footer />}>
+            {children}
+          </SiteChrome>
         </SmoothScroll>
         <MetaPixel />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

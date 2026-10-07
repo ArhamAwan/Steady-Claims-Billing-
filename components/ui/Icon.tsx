@@ -59,6 +59,7 @@ const paths = {
   x: <path d="M6 6l12 12M18 6L6 18" />,
   plus: <path d="M12 5v14M5 12h14" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  chevron: <path d="M6 9l6 6 6-6" />,
   info: (
     <>
       <circle cx="12" cy="12" r="9" />
