@@ -121,6 +121,35 @@ export function RevenueLander() {
     else el.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
   };
 
+  // "Get my free billing audit": land on the form itself. On desktop the estimate sits beside it;
+  // on phones a compact estimate is pinned to the top of the form card.
+  const goToForm = () => {
+    const el = formRef.current;
+    if (!el) return;
+    if (lenis) lenis.scrollTo(el, { offset: -20 });
+    else window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 20, behavior: reduce ? "auto" : "smooth" });
+    // Put the cursor in the first field once the scroll settles (desktop only, so phones don't pop the keyboard).
+    if (window.matchMedia("(min-width: 1024px)").matches) {
+      window.setTimeout(() => el.querySelector<HTMLInputElement>("input:not([tabindex='-1'])")?.focus({ preventScroll: true }), 900);
+    }
+  };
+
+  const estimate =
+    h.high === null ? (
+      <>
+        <Money value={h.low} />
+        /yr
+      </>
+    ) : h.low > 0 ? (
+      <>
+        <Money value={h.low} /> – <Money value={h.high} />
+      </>
+    ) : (
+      <>
+        Up to <Money value={h.high} />
+      </>
+    );
+
   return (
     <>
       {/* ---------- Hero ---------- */}
@@ -177,7 +206,7 @@ export function RevenueLander() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: EASE, delay: 0.25 }}
         >
-          <RevenueCalculator inputs={inputs} result={result} onChange={setInputs} onCta={() => scrollTo("audit")} />
+          <RevenueCalculator inputs={inputs} result={result} onChange={setInputs} onCta={goToForm} />
         </motion.div>
       </section>
 
@@ -224,27 +253,14 @@ export function RevenueLander() {
 
       {/* ---------- Form ---------- */}
       <section id="audit" aria-labelledby="audit-title" className="container-x scroll-mt-6 pt-[clamp(64px,8vw,110px)]">
-        <div className="flex flex-wrap items-start gap-5">
-          <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-4 lg:sticky lg:top-6">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)]">
+          <aside className="order-2 flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:order-1">
             <div className="grid-bg flex flex-col gap-[18px] rounded-[28px] bg-ink p-[30px] text-paper">
               <span className="font-mono text-xs tracking-[0.16em] text-teal">YOUR ESTIMATE</span>
               <div className="flex flex-col gap-1.5">
                 <span className="text-sm text-on-dark">{h.label}</span>
                 <span className="font-display text-[30px] font-bold leading-[1.1] tracking-[-0.025em] text-teal tabular-nums">
-                  {h.high === null ? (
-                    <>
-                      <Money value={h.low} />
-                      /yr
-                    </>
-                  ) : h.low > 0 ? (
-                    <>
-                      <Money value={h.low} /> – <Money value={h.high} />
-                    </>
-                  ) : (
-                    <>
-                      Up to <Money value={h.high} />
-                    </>
-                  )}
+                  {estimate}
                 </span>
               </div>
               <dl className="grid grid-cols-2 gap-3.5 border-t border-paper/12 pt-4">
@@ -281,8 +297,21 @@ export function RevenueLander() {
 
           <div
             ref={formRef}
-            className="relative flex min-w-0 flex-[999_1_560px] flex-col gap-6 rounded-[32px] border border-[#DDE5EE] bg-white p-[clamp(22px,3.4vw,46px)] shadow-[0_40px_80px_-40px_rgba(11,31,58,.25)]"
+            className="relative order-1 flex min-w-0 flex-col gap-6 rounded-[32px] border border-[#DDE5EE] bg-white p-[clamp(22px,3.4vw,46px)] shadow-[0_40px_80px_-40px_rgba(11,31,58,.25)] lg:order-2"
           >
+            {/* Phones/tablets: the estimate panel sits below the form, so keep the headline number in view here. */}
+            <div className="grid-bg flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl bg-ink px-4 py-3 text-paper lg:hidden">
+              <span className="flex min-w-0 flex-col">
+                <span className="font-mono text-[11px] tracking-[0.14em] text-teal">YOUR ESTIMATE</span>
+                <span className="font-display text-[22px] font-bold leading-tight tracking-[-0.02em] text-teal tabular-nums">
+                  {estimate}
+                </span>
+                <span className="text-[12px] text-on-dark-3">{h.label}</span>
+              </span>
+              <button type="button" onClick={() => scrollTo("calc")} className="min-h-11 text-[13px] text-teal-2 underline underline-offset-4">
+                Change numbers
+              </button>
+            </div>
             <div className="flex flex-col gap-2">
               <span className="font-mono text-[12.5px] tracking-[0.16em] text-blue">FREE BILLING AUDIT</span>
               <h2 id="audit-title" className="font-display text-[clamp(28px,2.8vw,40px)] font-bold leading-[1.05] tracking-[-0.02em]">
@@ -348,7 +377,7 @@ export function RevenueLander() {
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => scrollTo("audit")}
+              onClick={goToForm}
               className="inline-flex min-h-[54px] items-center rounded-full bg-teal px-6 text-[15px] font-semibold text-ink transition-[background-color,transform] duration-300 hover:-translate-y-0.5 hover:bg-teal-2"
             >
               Get my free billing audit
