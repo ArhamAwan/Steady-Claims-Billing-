@@ -160,6 +160,10 @@ function doPost(e) {
     if (data.company) return json_({ ok: true });
 
     const tab = data.formType === 'quick' ? TABS.quick : TABS.full;
+    // The step form (/RCM, /revenue-calculator) sends first and last name separately.
+    if (!data.contactName && (data.firstName || data.lastName)) {
+      data.contactName = [data.firstName, data.lastName].filter(Boolean).join(' ');
+    }
     if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.email))) {
       return json_({ ok: false, error: 'A valid email is required.' });
     }
@@ -174,12 +178,37 @@ function doPost(e) {
     try {
       const ss = SpreadsheetApp.openById(SHEET_ID);
       const sh = ss.getSheetByName(tab.name) || prepareSheet_(ss, tab);
-      sh.appendRow(row);
+      
+      const emailColIdx = tab.columns.findIndex(function(c) { return c[1] === 'email'; });
+      let updated = false;
+      
+      if (data.email) {
+        const values = sh.getDataRange().getValues();
+        // Search from bottom up for the most recent submission by this email
+        for (let i = values.length - 1; i > 0; i--) {
+          if (values[i][emailColIdx] === data.email) {
+            const existingRow = values[i];
+            const updatedRow = tab.columns.map(function(c, j) {
+              const newVal = clean_(data[c[1]]);
+              return (newVal !== '') ? newVal : existingRow[j];
+            });
+            sh.getRange(i + 1, 1, 1, updatedRow.length).setValues([updatedRow]);
+            updated = true;
+            break;
+          }
+        }
+      }
+      
+      if (!updated) {
+        sh.appendRow(row);
+      }
+      
     } finally {
       lock.releaseLock();
     }
 
-    if (NOTIFY_EMAIL) notify_(tab, row);
+    // Only notify on the final submission
+    if (NOTIFY_EMAIL && !data.isPartial) notify_(tab, row);
     return json_({ ok: true });
   } catch (err) {
     console.error(err);

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { calculate, DEFAULT_INPUTS, headline, money, type CalcInputs } from "@/lib/calculator";
 import { heroPoints, testimonials } from "@/lib/content";
 import { site } from "@/lib/site";
@@ -9,7 +9,7 @@ import { useLenis } from "../providers/SmoothScroll";
 import { PulseLine } from "../motion/PulseLine";
 import { EASE, Reveal } from "../motion/Reveal";
 import { Icon } from "../ui/Icon";
-import { AuditForm } from "./AuditForm";
+import { MetaStepForm } from "../meta-leads/MetaStepForm";
 import { Money, RevenueCalculator } from "./RevenueCalculator";
 
 const QUOTES = ["Dr. Christopher Bennett", "Amanda Williams", "Sarah Mitchell"]
@@ -36,7 +36,7 @@ const FAQS = [
 ];
 
 const STEPS = [
-  { t: "Tell us about your practice", d: "Five short steps below. Your calculator numbers come with you, so there's nothing to retype." },
+  { t: "Tell us about your practice", d: "Five quick steps below. Your calculator numbers are sent along with your request." },
   { t: "We review your billing", d: "Our team looks at where claims are getting stuck: denials, eligibility, coding, aging AR and follow-up." },
   { t: "You get a clear plan", d: "What we'd fix first, what it would cost, and how the handover works. You decide what happens next." },
 ];
@@ -98,6 +98,21 @@ export function RevenueLander() {
   const [inputs, setInputs] = useState<CalcInputs>(DEFAULT_INPUTS);
   const result = useMemo(() => calculate(inputs), [inputs]);
   const h = headline(result);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Sent with every form submission so the lead arrives with its calculator numbers.
+  const extra = useMemo(
+    () => ({
+      source: "Revenue calculator lander",
+      calcCollections: money(inputs.collections),
+      calcClaims: Math.round(inputs.claims),
+      calcDenialRate: `${inputs.denialRate}%`,
+      calcBillingCost: money(inputs.billingCost),
+      calcEstimate: h.text,
+      calcFee: `${money(result.feeLow)} – ${money(result.feeHigh)} per month`,
+    }),
+    [inputs, result, h.text],
+  );
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -264,9 +279,24 @@ export function RevenueLander() {
             </div>
           </aside>
 
-          <AuditForm inputs={inputs} result={result} estimateText={h.text} />
+          <div
+            ref={formRef}
+            className="relative flex min-w-0 flex-[999_1_560px] flex-col gap-6 rounded-[32px] border border-[#DDE5EE] bg-white p-[clamp(22px,3.4vw,46px)] shadow-[0_40px_80px_-40px_rgba(11,31,58,.25)]"
+          >
+            <div className="flex flex-col gap-2">
+              <span className="font-mono text-[12.5px] tracking-[0.16em] text-blue">FREE BILLING AUDIT</span>
+              <h2 id="audit-title" className="font-display text-[clamp(28px,2.8vw,40px)] font-bold leading-[1.05] tracking-[-0.02em]">
+                Get your numbers checked by our team.
+              </h2>
+            </div>
+            <MetaStepForm
+              formRef={formRef}
+              extra={extra}
+              defaultClaimVolume={String(Math.round(inputs.claims))}
+              leadName="revenue-calculator-audit-request"
+            />
+          </div>
         </div>
-        <p className="mt-[18px] text-center text-sm text-muted">No patient data. No hidden fees. No spam, ever.</p>
       </section>
 
       {/* ---------- Testimonials ---------- */}

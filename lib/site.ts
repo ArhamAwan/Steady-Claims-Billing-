@@ -31,6 +31,3 @@ export const nav = [
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
-
-/** Ad landing pages: no site header, menu or footer (see components/layout/SiteChrome.tsx). */
-export const landerPaths = ["/revenue-calculator"];
