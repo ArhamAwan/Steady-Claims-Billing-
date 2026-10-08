@@ -234,10 +234,28 @@ export function RevenueCalculator({
         {FIELDS.map((f) => (
           <Control key={f.key} f={f} value={inputs[f.key]} onChange={(n) => onChange({ ...inputs, [f.key]: n })} />
         ))}
+        {/* Phones/tablets: the button sits right under the last slider, so there's nothing to scroll past. */}
+        {!revealed && (
+          <div className="mt-2 flex flex-col gap-2 lg:hidden">
+            <button
+              type="button"
+              onClick={onReveal}
+              className="group inline-flex min-h-[60px] items-center justify-center gap-2.5 rounded-full bg-ink px-7 text-[16.5px] font-semibold text-paper transition-[background-color,transform] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-ink-hover"
+            >
+              Review my analysis
+              <Icon name="arrow" size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+            </button>
+            <p className="text-center text-[12.5px] text-subtle">Free, instant, and no email needed to see it.</p>
+          </div>
+        )}
       </div>
 
       {/* results: a teaser until the visitor asks to review the analysis */}
-      <div id="analysis" className="grid-bg relative scroll-mt-5 bg-ink text-paper" aria-live="polite">
+      <div
+        id="analysis"
+        className={`grid-bg relative scroll-mt-5 bg-ink text-paper ${revealed ? "" : "hidden lg:block"}`}
+        aria-live="polite"
+      >
         <AnimatePresence mode="wait" initial={false}>
           {!revealed ? (
             <motion.div
