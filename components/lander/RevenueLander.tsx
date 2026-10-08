@@ -6,6 +6,7 @@ import { calculate, DEFAULT_INPUTS, headline, money, type CalcInputs } from "@/l
 import { heroPoints, testimonials } from "@/lib/content";
 import { site } from "@/lib/site";
 import { useLenis } from "../providers/SmoothScroll";
+import { trackPixel } from "../analytics/MetaPixel";
 import { PulseLine } from "../motion/PulseLine";
 import { EASE, Reveal } from "../motion/Reveal";
 import { Icon } from "../ui/Icon";
@@ -36,9 +37,18 @@ const FAQS = [
 ];
 
 const STEPS = [
-  { t: "Tell us about your practice", d: "Five quick steps below. Your calculator numbers are sent along with your request." },
-  { t: "We review your billing", d: "Our team looks at where claims are getting stuck: denials, eligibility, coding, aging AR and follow-up." },
-  { t: "You get a clear plan", d: "What we'd fix first, what it would cost, and how the handover works. You decide what happens next." },
+  {
+    t: "Tell us about your practice",
+    d: "One short form below. Your calculator numbers are sent along with your request.",
+  },
+  {
+    t: "We review your billing",
+    d: "Our team looks at where claims are getting stuck: denials, eligibility, coding, aging AR and follow-up.",
+  },
+  {
+    t: "You get a clear plan",
+    d: "What we'd fix first, what it would cost, and how the handover works. You decide what happens next.",
+  },
 ];
 
 const initials = (name: string) =>
@@ -65,7 +75,11 @@ function Faq() {
             >
               {x.q}
               <motion.span
-                animate={{ rotate: on ? 45 : 0, backgroundColor: on ? "#37D3C1" : "rgba(0,0,0,0)", borderColor: on ? "#37D3C1" : "#0B1F3A" }}
+                animate={{
+                  rotate: on ? 45 : 0,
+                  backgroundColor: on ? "#37D3C1" : "rgba(0,0,0,0)",
+                  borderColor: on ? "#37D3C1" : "#0B1F3A",
+                }}
                 transition={{ duration: 0.3, ease: EASE }}
                 className="flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full border-[1.5px]"
               >
@@ -96,29 +110,36 @@ export function RevenueLander() {
   const reduce = useReducedMotion();
   const lenis = useLenis();
   const [inputs, setInputs] = useState<CalcInputs>(DEFAULT_INPUTS);
+  const [revealed, setRevealed] = useState(false);
   const result = useMemo(() => calculate(inputs), [inputs]);
   const h = headline(result);
   const formRef = useRef<HTMLDivElement>(null);
 
   // Sent with every form submission so the lead arrives with its calculator numbers.
   const extra = useMemo(
-    () => ({
-      source: "Revenue calculator lander",
-      calcCollections: money(inputs.collections),
-      calcClaims: Math.round(inputs.claims),
-      calcDenialRate: `${inputs.denialRate}%`,
-      calcBillingCost: money(inputs.billingCost),
-      calcEstimate: h.text,
-      calcFee: `${money(result.feeLow)} – ${money(result.feeHigh)} per month`,
-    }),
-    [inputs, result, h.text],
+    () =>
+      // Only attach calculator numbers the visitor actually reviewed.
+      !revealed
+        ? { source: "Revenue calculator lander (analysis not opened)" }
+        : {
+            source: "Revenue calculator lander",
+            calcCollections: money(inputs.collections),
+            calcClaims: Math.round(inputs.claims),
+            calcDenialRate: `${inputs.denialRate}%`,
+            calcBillingCost: money(inputs.billingCost),
+            calcEstimate: h.text,
+            calcFee: `${money(result.feeLow)} – ${money(result.feeHigh)} per month`,
+          },
+    [inputs, result, h.text, revealed],
   );
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (lenis) lenis.scrollTo(el, { offset: -24 });
-    else el.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+    if (lenis) {
+      lenis.resize(); // the page height changes when the report opens
+      lenis.scrollTo(el, { offset: -24 });
+    } else el.scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
   };
 
   // "Get my free billing audit": land on the form itself. On desktop the estimate sits beside it;
@@ -126,12 +147,35 @@ export function RevenueLander() {
   const goToForm = () => {
     const el = formRef.current;
     if (!el) return;
-    if (lenis) lenis.scrollTo(el, { offset: -20 });
-    else window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 20, behavior: reduce ? "auto" : "smooth" });
+    if (lenis) {
+      lenis.resize();
+      lenis.scrollTo(el, { offset: -20 });
+    } else
+      window.scrollTo({
+        top: el.getBoundingClientRect().top + window.scrollY - 20,
+        behavior: reduce ? "auto" : "smooth",
+      });
     // Put the cursor in the first field once the scroll settles (desktop only, so phones don't pop the keyboard).
     if (window.matchMedia("(min-width: 1024px)").matches) {
-      window.setTimeout(() => el.querySelector<HTMLInputElement>("input:not([tabindex='-1'])")?.focus({ preventScroll: true }), 900);
+      window.setTimeout(
+        () => el.querySelector<HTMLInputElement>("input:not([tabindex='-1'])")?.focus({ preventScroll: true }),
+        900,
+      );
     }
+  };
+
+  // "Review my analysis": open the report. On phones the report sits below the inputs, so bring it into view.
+  const reveal = (scroll: "if-stacked" | "always" = "if-stacked") => {
+    if (!revealed) {
+      setRevealed(true);
+      trackPixel("ViewContent", { content_name: "revenue-calculator-analysis" });
+    }
+    const stacked = !window.matchMedia("(min-width: 1024px)").matches;
+    window.setTimeout(() => {
+      const top = document.getElementById("analysis")?.getBoundingClientRect().top ?? 0;
+      // Bring the report's top into view whenever it isn't already (always on phones, where it sits below the inputs).
+      if (scroll === "always" || stacked || top < 0) scrollTo(stacked ? "analysis" : "calc");
+    }, 60);
   };
 
   const estimate =
@@ -200,13 +244,24 @@ export function RevenueLander() {
       </section>
 
       {/* ---------- Calculator ---------- */}
-      <section id="calc" aria-label="Revenue calculator" className="container-x relative -mt-[clamp(130px,12vw,170px)] scroll-mt-6">
+      <section
+        id="calc"
+        aria-label="Revenue calculator"
+        className="container-x relative -mt-[clamp(130px,12vw,170px)] scroll-mt-6"
+      >
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: EASE, delay: 0.25 }}
         >
-          <RevenueCalculator inputs={inputs} result={result} onChange={setInputs} onCta={goToForm} />
+          <RevenueCalculator
+            inputs={inputs}
+            result={result}
+            onChange={setInputs}
+            onCta={goToForm}
+            revealed={revealed}
+            onReveal={() => reveal()}
+          />
         </motion.div>
       </section>
 
@@ -215,13 +270,21 @@ export function RevenueLander() {
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-3.5">
           {heroPoints.map((p, i) => {
             const style =
-              i === 2 ? "bg-teal text-ink" : i === 3 ? "bg-ink text-paper" : "border border-[#DDE5EE] bg-white text-ink";
+              i === 2
+                ? "bg-teal text-ink"
+                : i === 3
+                  ? "bg-ink text-paper"
+                  : "border border-[#DDE5EE] bg-white text-ink";
             return (
               <Reveal key={p.key} delay={i * 0.06} className={`flex flex-col gap-2.5 rounded-3xl p-[26px] ${style}`}>
-                <span className={`font-display text-[34px] font-bold leading-none tracking-[-0.03em] ${i === 3 ? "text-teal" : ""}`}>
+                <span
+                  className={`font-display text-[34px] font-bold leading-none tracking-[-0.03em] ${i === 3 ? "text-teal" : ""}`}
+                >
                   {p.highlight.replace(" to ", "–")}
                 </span>
-                <span className={`text-[15px] leading-snug ${i === 3 ? "text-on-dark" : i === 2 ? "text-ink" : "text-muted"}`}>
+                <span
+                  className={`text-[15px] leading-snug ${i === 3 ? "text-on-dark" : i === 2 ? "text-ink" : "text-muted"}`}
+                >
                   {(p.before + p.highlight + p.after).trim().replace(/^./, (c) => c.toUpperCase())}
                 </span>
               </Reveal>
@@ -242,7 +305,11 @@ export function RevenueLander() {
         </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-4">
           {STEPS.map((s, i) => (
-            <Reveal key={s.t} delay={i * 0.08} className="flex flex-col gap-[18px] rounded-3xl border border-line-2 p-7">
+            <Reveal
+              key={s.t}
+              delay={i * 0.08}
+              className="flex flex-col gap-[18px] rounded-3xl border border-line-2 p-7"
+            >
               <span className="font-mono text-xs text-blue">STEP 0{i + 1}</span>
               <h3 className="font-display text-2xl font-bold tracking-[-0.015em]">{s.t}</h3>
               <p className="text-[15.5px] leading-relaxed text-muted">{s.d}</p>
@@ -257,12 +324,28 @@ export function RevenueLander() {
           <aside className="order-2 flex min-w-0 flex-col gap-4 lg:sticky lg:top-6 lg:order-1">
             <div className="grid-bg flex flex-col gap-[18px] rounded-[28px] bg-ink p-[30px] text-paper">
               <span className="font-mono text-xs tracking-[0.16em] text-teal">YOUR ESTIMATE</span>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-sm text-on-dark">{h.label}</span>
-                <span className="font-display text-[30px] font-bold leading-[1.1] tracking-[-0.025em] text-teal tabular-nums">
-                  {estimate}
-                </span>
-              </div>
+              {revealed ? (
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm text-on-dark">{h.label}</span>
+                  <span className="font-display text-[30px] font-bold leading-[1.1] tracking-[-0.025em] text-teal tabular-nums">
+                    {estimate}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-start gap-3">
+                  <span className="text-sm leading-relaxed text-on-dark">
+                    Your analysis isn&apos;t open yet. Review it in the calculator to see your yearly upside.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => reveal("always")}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-teal px-5 text-sm font-semibold text-ink transition-colors hover:bg-teal-2"
+                  >
+                    Review my analysis
+                    <Icon name="arrow" size={16} />
+                  </button>
+                </div>
+              )}
               <dl className="grid grid-cols-2 gap-3.5 border-t border-paper/12 pt-4">
                 {[
                   ["Collections", `${money(inputs.collections)}/mo`],
@@ -275,14 +358,20 @@ export function RevenueLander() {
                     <dd className="font-display text-[19px] font-bold">{v}</dd>
                   </div>
                 ))}
-                <div className="col-span-2 flex flex-col gap-1">
-                  <dt className="text-[12.5px] text-on-dark-3">Our fee (2.50%–5.00%)</dt>
-                  <dd className="font-display text-[19px] font-bold">
-                    {money(result.feeLow)}–{money(result.feeHigh)}/mo
-                  </dd>
-                </div>
+                {revealed && (
+                  <div className="col-span-2 flex flex-col gap-1">
+                    <dt className="text-[12.5px] text-on-dark-3">Our fee (2.50%–5.00%)</dt>
+                    <dd className="font-display text-[19px] font-bold">
+                      {money(result.feeLow)}–{money(result.feeHigh)}/mo
+                    </dd>
+                  </div>
+                )}
               </dl>
-              <button type="button" onClick={() => scrollTo("calc")} className="min-h-11 self-start text-sm text-teal-2 underline underline-offset-4">
+              <button
+                type="button"
+                onClick={() => scrollTo("calc")}
+                className="min-h-11 self-start text-sm text-teal-2 underline underline-offset-4"
+              >
                 Change my numbers
               </button>
             </div>
@@ -301,20 +390,45 @@ export function RevenueLander() {
           >
             {/* Phones/tablets: the estimate panel sits below the form, so keep the headline number in view here. */}
             <div className="grid-bg flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl bg-ink px-4 py-3 text-paper lg:hidden">
-              <span className="flex min-w-0 flex-col">
-                <span className="font-mono text-[11px] tracking-[0.14em] text-teal">YOUR ESTIMATE</span>
-                <span className="font-display text-[22px] font-bold leading-tight tracking-[-0.02em] text-teal tabular-nums">
-                  {estimate}
-                </span>
-                <span className="text-[12px] text-on-dark-3">{h.label}</span>
-              </span>
-              <button type="button" onClick={() => scrollTo("calc")} className="min-h-11 text-[13px] text-teal-2 underline underline-offset-4">
-                Change numbers
-              </button>
+              {revealed ? (
+                <>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="font-mono text-[11px] tracking-[0.14em] text-teal">YOUR ESTIMATE</span>
+                    <span className="font-display text-[22px] font-bold leading-tight tracking-[-0.02em] text-teal tabular-nums">
+                      {estimate}
+                    </span>
+                    <span className="text-[12px] text-on-dark-3">{h.label}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => scrollTo("calc")}
+                    className="min-h-11 text-[13px] text-teal-2 underline underline-offset-4"
+                  >
+                    Change numbers
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="font-mono text-[11px] tracking-[0.14em] text-teal">YOUR ANALYSIS</span>
+                    <span className="text-[13.5px] text-on-dark">See your yearly upside before you send this.</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => reveal("always")}
+                    className="min-h-11 text-[13px] font-semibold text-teal-2 underline underline-offset-4"
+                  >
+                    Review my analysis
+                  </button>
+                </>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <span className="font-mono text-[12.5px] tracking-[0.16em] text-blue">FREE BILLING AUDIT</span>
-              <h2 id="audit-title" className="font-display text-[clamp(28px,2.8vw,40px)] font-bold leading-[1.05] tracking-[-0.02em]">
+              <h2
+                id="audit-title"
+                className="font-display text-[clamp(28px,2.8vw,40px)] font-bold leading-[1.05] tracking-[-0.02em]"
+              >
                 Get your numbers checked by our team.
               </h2>
             </div>
@@ -323,6 +437,7 @@ export function RevenueLander() {
               extra={extra}
               defaultClaimVolume={String(Math.round(inputs.claims))}
               leadName="revenue-calculator-audit-request"
+              contactOnly
             />
           </div>
         </div>
@@ -363,7 +478,9 @@ export function RevenueLander() {
       {/* ---------- FAQ ---------- */}
       <section className="mx-auto max-w-[1000px] px-[clamp(20px,4vw,48px)] py-[clamp(72px,9vw,120px)]">
         <Reveal>
-          <h2 className="mb-6 font-display text-[clamp(30px,3.4vw,44px)] font-bold leading-none tracking-[-0.03em]">Before you ask.</h2>
+          <h2 className="mb-6 font-display text-[clamp(30px,3.4vw,44px)] font-bold leading-none tracking-[-0.03em]">
+            Before you ask.
+          </h2>
         </Reveal>
         <Faq />
       </section>

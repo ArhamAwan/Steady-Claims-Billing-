@@ -148,6 +148,7 @@ export function MetaStepForm({
   extra,
   defaultClaimVolume,
   leadName = "meta-leads-audit-request",
+  contactOnly = false,
 }: {
   formRef?: React.RefObject<HTMLDivElement | null>;
   /** Extra fields sent with every submission (e.g. the revenue calculator's numbers). */
@@ -156,6 +157,8 @@ export function MetaStepForm({
   defaultClaimVolume?: string;
   /** Meta Pixel Lead event content_name. */
   leadName?: string;
+  /** Show only the first step (name, email, phone, specialty) and submit from there. */
+  contactOnly?: boolean;
 }) {
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
@@ -349,8 +352,10 @@ export function MetaStepForm({
     },
   ];
 
-  const current = steps[step];
-  const progress = ((step + 1) / TOTAL_STEPS) * 100;
+  const visibleSteps = contactOnly ? [{ ...steps[0], isLast: true }] : steps;
+  const totalSteps = contactOnly ? 1 : TOTAL_STEPS;
+  const current = visibleSteps[Math.min(step, visibleSteps.length - 1)];
+  const progress = ((step + 1) / totalSteps) * 100;
 
   // ── Success ───────────────────────────────────────────────────────────────
 
@@ -402,11 +407,11 @@ export function MetaStepForm({
       <input name="company" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true"
         className="absolute -left-[9999px] h-px w-px overflow-hidden opacity-0" />
 
-      {/* Progress bar */}
-      <div className="flex flex-col gap-2">
+      {/* Progress bar (not needed when there's only one step) */}
+      <div className={contactOnly ? "hidden" : "flex flex-col gap-2"}>
         <div className="flex items-center justify-between">
           <span className="font-mono text-[11px] tracking-[0.14em] text-subtle">
-            STEP {step + 1} / {TOTAL_STEPS}
+            STEP {step + 1} / {totalSteps}
           </span>
           {step > 0 && (
             <button type="button" onClick={() => go(step - 1)}
@@ -460,9 +465,9 @@ export function MetaStepForm({
           <button
             type="button"
             onClick={submit}
-            disabled={status === "sending"}
+            disabled={status === "sending" || !current.canContinue}
             aria-busy={status === "sending"}
-            className="group inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-full bg-teal px-8 text-base font-semibold text-ink transition-[background-color,transform,opacity] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2 disabled:cursor-wait disabled:opacity-70"
+            className={`group inline-flex min-h-[56px] w-full items-center justify-center gap-2.5 rounded-full bg-teal px-8 text-base font-semibold text-ink transition-[background-color,transform,opacity] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2 ${status === "sending" ? "cursor-wait opacity-70" : "disabled:pointer-events-none disabled:opacity-40"}`}
           >
             {status === "sending" ? (
               <><span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/30 border-t-ink" aria-hidden="true" />Sending…</>

@@ -1,6 +1,6 @@
 "use client";
 
-import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { useEffect, useId, useState, type ChangeEvent } from "react";
 import { DEFAULT_INPUTS, headline, money, type CalcInputs, type CalcResult } from "@/lib/calculator";
 import { EASE } from "../motion/Reveal";
@@ -45,7 +45,15 @@ const FIELDS: Field[] = [
     prefix: "$",
     scale: ["$10k", "$1M+"],
   },
-  { key: "claims", label: "Claims submitted per month", hint: "All payers, all providers", min: 50, max: 10000, step: 50, scale: ["50", "10,000+"] },
+  {
+    key: "claims",
+    label: "Claims submitted per month",
+    hint: "All payers, all providers",
+    min: 50,
+    max: 10000,
+    step: 50,
+    scale: ["50", "10,000+"],
+  },
   {
     key: "denialRate",
     label: "Current denial rate",
@@ -138,8 +146,17 @@ function Bar({ label, paid, accent }: { label: string; paid: number; accent: str
         <span className="font-mono">{Number(paid.toFixed(1))}%</span>
       </div>
       <div className="flex h-3.5 overflow-hidden rounded-full bg-paper/10">
-        <motion.i className="block h-full" style={{ background: accent }} animate={{ width: `${paid}%` }} transition={{ duration: 0.6, ease: EASE }} />
-        <motion.i className="block h-full bg-coral" animate={{ width: `${100 - paid}%` }} transition={{ duration: 0.6, ease: EASE }} />
+        <motion.i
+          className="block h-full"
+          style={{ background: accent }}
+          animate={{ width: `${paid}%` }}
+          transition={{ duration: 0.6, ease: EASE }}
+        />
+        <motion.i
+          className="block h-full bg-coral"
+          animate={{ width: `${100 - paid}%` }}
+          transition={{ duration: 0.6, ease: EASE }}
+        />
       </div>
     </div>
   );
@@ -162,12 +179,18 @@ export function RevenueCalculator({
   result,
   onChange,
   onCta,
+  revealed,
+  onReveal,
 }: {
   inputs: CalcInputs;
   result: CalcResult;
   onChange: (next: CalcInputs) => void;
   onCta: () => void;
+  /** The report stays hidden until the visitor asks to review it. */
+  revealed: boolean;
+  onReveal: () => void;
 }) {
+  const reduce = useReducedMotion();
   const h = headline(result);
   const per = <span className="text-[13px] font-medium text-on-dark-3"> /mo</span>;
 
@@ -213,77 +236,148 @@ export function RevenueCalculator({
         ))}
       </div>
 
-      {/* results */}
-      <div className="grid-bg flex flex-col gap-[22px] bg-ink p-[clamp(22px,3.4vw,44px)] text-paper" aria-live="polite">
-        <span className="font-mono text-[12.5px] tracking-[0.16em] text-teal">02 — YOUR ESTIMATE</span>
+      {/* results: a teaser until the visitor asks to review the analysis */}
+      <div id="analysis" className="grid-bg relative scroll-mt-5 bg-ink text-paper" aria-live="polite">
+        <AnimatePresence mode="wait" initial={false}>
+          {!revealed ? (
+            <motion.div
+              key="teaser"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -16, filter: "blur(6px)" }}
+              transition={{ duration: 0.35, ease: EASE }}
+              className="flex h-full flex-col justify-center gap-7 p-[clamp(22px,3.4vw,44px)]"
+            >
+              <span className="font-mono text-[12.5px] tracking-[0.16em] text-teal">02 — YOUR ANALYSIS</span>
+              <div className="flex flex-col gap-3">
+                <h3 className="font-display text-[clamp(28px,2.8vw,38px)] font-bold leading-[1.05] tracking-[-0.025em]">
+                  Your billing analysis is ready.
+                </h3>
+                <p className="text-[15.5px] leading-relaxed text-on-dark">
+                  Set your numbers, then review your analysis. You&apos;ll see:
+                </p>
+              </div>
+              <ul className="flex flex-col gap-3">
+                {[
+                  "What's stuck in denials each month",
+                  "Revenue you could get paid the first time",
+                  "Our fee at 2.50%–5.00% of collections",
+                  "How that compares with what you pay now",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3 text-[15px] text-[#D4DCE7]">
+                    <span className="mt-px flex h-6 w-6 flex-none items-center justify-center rounded-full bg-teal/15 text-teal">
+                      <Icon name="check" size={14} strokeWidth={2.6} />
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              {/* blurred preview of the headline number */}
+              <div
+                aria-hidden="true"
+                className="select-none rounded-[18px] border border-paper/10 bg-paper/5 px-5 py-4"
+              >
+                <span className="block text-[13px] text-on-dark-3">Estimated yearly upside</span>
+                <span className="block font-display text-[clamp(28px,2.8vw,40px)] font-bold tracking-[-0.03em] text-teal blur-[9px]">
+                  {money(Math.max(0, result.upsideLow))} – {money(Math.max(0, result.upsideHigh))}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={onReveal}
+                className="group inline-flex min-h-[60px] items-center justify-center gap-2.5 rounded-full bg-teal px-7 text-[16.5px] font-semibold text-ink transition-[background-color,transform,box-shadow] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2 hover:shadow-[0_14px_30px_-12px_rgba(55,211,193,.7)]"
+              >
+                Review my analysis
+                <Icon name="arrow" size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+              <p className="-mt-3 text-center text-[12.5px] text-on-dark-3">
+                Free, instant, and no email needed to see it.
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="report"
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="flex flex-col gap-[22px] p-[clamp(22px,3.4vw,44px)]"
+            >
+              <span className="font-mono text-[12.5px] tracking-[0.16em] text-teal">02 — YOUR ANALYSIS</span>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-[15px] text-on-dark">{h.label}</span>
-          <span className="font-display text-[clamp(34px,3.3vw,48px)] font-bold leading-[1.05] tracking-[-0.03em] text-teal tabular-nums">
-            {h.high === null ? (
-              <>
-                <Money value={h.low} />
-                /yr
-              </>
-            ) : h.low > 0 ? (
-              <>
-                <Money value={h.low} /> – <Money value={h.high} />
-              </>
-            ) : (
-              <>
-                Up to <Money value={h.high} />
-              </>
-            )}
-          </span>
-          <span className="text-sm text-on-dark-3">{h.note}</span>
-        </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-[15px] text-on-dark">{h.label}</span>
+                <span className="font-display text-[clamp(34px,3.3vw,48px)] font-bold leading-[1.05] tracking-[-0.03em] text-teal tabular-nums">
+                  {h.high === null ? (
+                    <>
+                      <Money value={h.low} />
+                      /yr
+                    </>
+                  ) : h.low > 0 ? (
+                    <>
+                      <Money value={h.low} /> – <Money value={h.high} />
+                    </>
+                  ) : (
+                    <>
+                      Up to <Money value={h.high} />
+                    </>
+                  )}
+                </span>
+                <span className="text-sm text-on-dark-3">{h.note}</span>
+              </div>
 
-        <div className="flex flex-col gap-3.5 rounded-[18px] border border-paper/10 bg-paper/5 p-[18px]">
-          <Bar label="Paid first time, today" paid={100 - Math.min(inputs.denialRate, 60)} accent="#6FE3D5" />
-          <Bar label="At our 98% claims acceptance rate" paid={98} accent="#37D3C1" />
-          <div className="flex flex-wrap gap-[18px] text-[12.5px] text-on-dark-2">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-[3px] bg-teal" />
-              Accepted
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-[3px] bg-coral" />
-              Denied or rejected
-            </span>
-          </div>
-        </div>
+              <div className="flex flex-col gap-3.5 rounded-[18px] border border-paper/10 bg-paper/5 p-[18px]">
+                <Bar label="Paid first time, today" paid={100 - Math.min(inputs.denialRate, 60)} accent="#6FE3D5" />
+                <Bar label="At our 98% claims acceptance rate" paid={98} accent="#37D3C1" />
+                <div className="flex flex-wrap gap-[18px] text-[12.5px] text-on-dark-2">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-[3px] bg-teal" />
+                    Accepted
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-[3px] bg-coral" />
+                    Denied or rejected
+                  </span>
+                </div>
+              </div>
 
-        <div className="flex flex-col">
-          <Row k="Stuck in denials today" sub={`About ${Math.round(result.deniedClaims).toLocaleString("en-US")} claims a month`}>
-            <Money value={result.stuckMonthly} />
-            {per}
-          </Row>
-          <Row k="Could be paid first time instead" sub="If your acceptance rate matched our 98%">
-            <Money value={result.recoverableMonthly * 12} />
-            <span className="text-[13px] font-medium text-on-dark-3"> /yr</span>
-          </Row>
-          <Row k="Our fee" sub="2.50% to 5.00% of the collected amount">
-            <Money value={result.feeLow} />–<Money value={result.feeHigh} />
-            {per}
-          </Row>
-          <Row k="Compared with what you spend now" sub={`Your cost ${money(inputs.billingCost)}/mo`}>
-            <span className={diffClass}>{diff}</span>
-          </Row>
-        </div>
+              <div className="flex flex-col">
+                <Row
+                  k="Stuck in denials today"
+                  sub={`About ${Math.round(result.deniedClaims).toLocaleString("en-US")} claims a month`}
+                >
+                  <Money value={result.stuckMonthly} />
+                  {per}
+                </Row>
+                <Row k="Could be paid first time instead" sub="If your acceptance rate matched our 98%">
+                  <Money value={result.recoverableMonthly * 12} />
+                  <span className="text-[13px] font-medium text-on-dark-3"> /yr</span>
+                </Row>
+                <Row k="Our fee" sub="2.50% to 5.00% of the collected amount">
+                  <Money value={result.feeLow} />–
+                  <Money value={result.feeHigh} />
+                  {per}
+                </Row>
+                <Row k="Compared with what you spend now" sub={`Your cost ${money(inputs.billingCost)}/mo`}>
+                  <span className={diffClass}>{diff}</span>
+                </Row>
+              </div>
 
-        <button
-          type="button"
-          onClick={onCta}
-          className="group inline-flex min-h-[60px] items-center justify-center gap-2.5 rounded-full bg-teal px-7 text-[16.5px] font-semibold text-ink transition-[background-color,transform,box-shadow] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2 hover:shadow-[0_14px_30px_-12px_rgba(55,211,193,.7)]"
-        >
-          Get my free billing audit
-          <Icon name="arrow" size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
-        </button>
-        <p className="text-[12.5px] leading-relaxed text-on-dark-3">
-          Estimates only, based on the numbers you enter, our 98% claims acceptance rate and our 2.50%–5.00% fee. Real
-          results depend on your payers, specialty, documentation and claim mix. The free audit gives you numbers for
-          your practice.
-        </p>
+              <button
+                type="button"
+                onClick={onCta}
+                className="group inline-flex min-h-[60px] items-center justify-center gap-2.5 rounded-full bg-teal px-7 text-[16.5px] font-semibold text-ink transition-[background-color,transform,box-shadow] duration-300 ease-out-expo hover:-translate-y-0.5 hover:bg-teal-2 hover:shadow-[0_14px_30px_-12px_rgba(55,211,193,.7)]"
+              >
+                Get my free billing audit
+                <Icon name="arrow" size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+              <p className="text-[12.5px] leading-relaxed text-on-dark-3">
+                Estimates only, based on the numbers you enter, our 98% claims acceptance rate and our 2.50%–5.00% fee.
+                Real results depend on your payers, specialty, documentation and claim mix. The free audit gives you
+                numbers for your practice.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
